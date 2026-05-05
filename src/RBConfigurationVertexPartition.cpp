@@ -206,16 +206,29 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
       }
     }
 
+/*****************************************************************************
+  EG Constraint
+
+  R - Rep.
+  D - Dem.
+  wR - Wasted Rep. Votes
+  wD - Wasted Dem. Votes
+  T - Total Votes
+******************************************************************************/
+
+
+
+        
     if ((this->eg_lambda > 0.0 || this->eg_lambda2 > 0.0) && this->graph->has_votes())
     {
       auto wasted = [](double R, double D, double& wR, double& wD) {
         double T = R + D;
-        if (R > D)      { wR = R - 0.5*T; wD = D; }
-        else if (D > R) { wD = D - 0.5*T; wR = R; }
-        else            { wR = R - 0.5*T; wD = D - 0.5*T; }
+        if (R > D)      { wR = R - 0.5*T; wD = D; } // If Reps won
+        else if (D > R) { wD = D - 0.5*T; wR = R; } // if dems won
+        else            { wR = R - 0.5*T; wD = D - 0.5*T; } // if tied
       };
 
-      auto const& votes_v = this->graph->votes(v);
+      auto const& votes_v = this->graph->votes(v); // the votes list of length 3. This should be specfied in the function call
       double r = votes_v[0], d = votes_v[1];
       auto const& cv_old = this->cvotes(old_comm);
       auto const& cv_new = this->cvotes(new_comm);
