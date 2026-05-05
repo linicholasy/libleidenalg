@@ -825,6 +825,13 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
   // Use existing constructor that auto-computes self_weights, then assign pop
   Graph* G = new Graph(graph, collapsed_weights, csizes, this->_correct_self_loops);
   G->_node_pop = cpops;
+  if (this->has_votes())
+  {
+    vector< std::array<double, 3> > collapsed_votes(n_collapsed, std::array<double, 3>{0.0, 0.0, 0.0});
+    for (size_t c = 0; c < partition->n_communities(); c++)
+      collapsed_votes[c] = partition->cvotes(c);
+    G->_votes = collapsed_votes;
+  }
   G->_remove_graph = true;
   #ifdef DEBUG
     cerr << "exit Graph::collapse_graph(vector<size_t> membership)" << endl << endl;

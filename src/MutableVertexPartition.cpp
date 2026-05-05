@@ -96,6 +96,15 @@ double MutableVertexPartition::cpop(size_t comm)
     return 0;
 }
 
+std::array<double, 3> const& MutableVertexPartition::cvotes(size_t comm)
+{
+  static const std::array<double, 3> zero = {0.0, 0.0, 0.0};
+  if (comm < this->_cvotes.size())
+    return this->_cvotes[comm];
+  else
+    return zero;
+}
+
 vector<size_t> MutableVertexPartition::get_community(size_t comm)
 {
   vector<size_t> community;
@@ -154,6 +163,8 @@ void MutableVertexPartition::init_admin()
   this->_cnodes.resize(this->_n_communities);
   this->_cpop.clear();
   this->_cpop.resize(this->_n_communities);
+  this->_cvotes.clear();
+  this->_cvotes.assign(this->_n_communities, std::array<double, 3>{0.0, 0.0, 0.0});
 
   this->_current_node_cache_community_from = n + 1; this->_cached_weight_from_community.resize(this->_n_communities, 0);
   this->_current_node_cache_community_to = n + 1;   this->_cached_weight_to_community.resize(this->_n_communities, 0);
@@ -177,6 +188,13 @@ void MutableVertexPartition::init_admin()
     this->_cnodes[v_comm] += 1;
     // Update the community population
     this->_cpop[v_comm] += this->graph->node_pop(v);
+    if (this->graph->has_votes())
+    {
+      auto const& vv = this->graph->votes(v);
+      this->_cvotes[v_comm][0] += vv[0];
+      this->_cvotes[v_comm][1] += vv[1];
+      this->_cvotes[v_comm][2] += vv[2];
+    }
   }
 
   size_t m = graph->ecount();
@@ -298,6 +316,7 @@ void MutableVertexPartition::relabel_communities(vector<size_t> const& new_comm_
   vector<double> new_csize(nbcomms, 0);
   vector<size_t> new_cnodes(nbcomms, 0);
   vector<double> new_cpop(nbcomms, 0);
+  vector< std::array<double, 3> > new_cvotes(nbcomms, std::array<double, 3>{0.0, 0.0, 0.0});
 
   // Relabel community admin
   for (size_t c = 0; c < new_comm_id.size(); c++) {
@@ -309,6 +328,8 @@ void MutableVertexPartition::relabel_communities(vector<size_t> const& new_comm_
       new_csize[new_c] = this->_csize[c];
       new_cnodes[new_c] = this->_cnodes[c];
       new_cpop[new_c] = this->_cpop[c];
+      if (c < this->_cvotes.size())
+        new_cvotes[new_c] = this->_cvotes[c];
     }
   }
 
@@ -318,6 +339,7 @@ void MutableVertexPartition::relabel_communities(vector<size_t> const& new_comm_
   this->_csize = new_csize;
   this->_cnodes = new_cnodes;
   this->_cpop = new_cpop;
+  this->_cvotes = new_cvotes;
 
   this->_empty_communities.clear();
   for (size_t c = 0; c < nbcomms; c++) {
@@ -532,6 +554,7 @@ size_t MutableVertexPartition::add_empty_community()
   this->_csize.resize(this->_n_communities);                  this->_csize[new_comm] = 0;
   this->_cnodes.resize(this->_n_communities);                 this->_cnodes[new_comm] = 0;
   this->_cpop.resize(this->_n_communities);                   this->_cpop[new_comm] = 0;
+  this->_cvotes.resize(this->_n_communities);                 this->_cvotes[new_comm] = std::array<double, 3>{0.0, 0.0, 0.0};
   this->_total_weight_in_comm.resize(this->_n_communities);   this->_total_weight_in_comm[new_comm] = 0;
   this->_total_weight_from_comm.resize(this->_n_communities); this->_total_weight_from_comm[new_comm] = 0;
   this->_total_weight_to_comm.resize(this->_n_communities);   this->_total_weight_to_comm[new_comm] = 0;
@@ -599,6 +622,13 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
   this->_cnodes[old_comm] -= 1;
   this->_csize[old_comm] -= node_size;
   this->_cpop[old_comm] -= this->graph->node_pop(v);
+  if (this->graph->has_votes() && old_comm < this->_cvotes.size())
+  {
+    auto const& vv = this->graph->votes(v);
+    this->_cvotes[old_comm][0] -= vv[0];
+    this->_cvotes[old_comm][1] -= vv[1];
+    this->_cvotes[old_comm][2] -= vv[2];
+  }
   #ifdef DEBUG
     cerr << "Removed from old community." << endl;
   #endif
@@ -646,6 +676,13 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
   this->_cnodes[new_comm] += 1;
   this->_csize[new_comm] += this->graph->node_size(v);
   this->_cpop[new_comm] += this->graph->node_pop(v);
+  if (this->graph->has_votes() && new_comm < this->_cvotes.size())
+  {
+    auto const& vv = this->graph->votes(v);
+    this->_cvotes[new_comm][0] += vv[0];
+    this->_cvotes[new_comm][1] += vv[1];
+    this->_cvotes[new_comm][2] += vv[2];
+  }
 
   // Switch outgoing links
   #ifdef DEBUG

@@ -59,6 +59,7 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     double csize(size_t comm);
     size_t cnodes(size_t comm);
     double cpop(size_t comm);
+    std::array<double, 3> const& cvotes(size_t comm);
     vector<size_t> get_community(size_t comm);
     vector< vector<size_t> > get_communities();
     size_t n_communities();
@@ -151,6 +152,8 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
 
     // Population of each community
     vector<double> _cpop;
+
+    vector< std::array<double, 3> > _cvotes;
 
     double weight_vertex_tofrom_comm(size_t v, size_t comm, igraph_neimode_t mode);
 
