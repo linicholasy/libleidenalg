@@ -169,6 +169,19 @@ class LIBLEIDENALG_EXPORT Graph
       this->_votes = v;
     };
 
+    inline vector<size_t> const& neighbors(size_t v)
+    { return this->_neighbors[v]; };
+
+    inline bool has_neighbors() const
+    { return !this->_neighbors.empty(); };
+
+    inline void set_neighbors(vector< vector<size_t> > const& n)
+    {
+      if (n.size() != static_cast<size_t>(igraph_vcount(this->_graph)))
+        throw Exception("Neighbors vector not the same size as the number of nodes.");
+      this->_neighbors = n;
+    };
+
     inline double node_self_weight(size_t v)
     { return this->_node_self_weights[v]; };
 
@@ -225,6 +238,7 @@ class LIBLEIDENALG_EXPORT Graph
     vector<double> _node_self_weights; // Used for the self weight of the nodes.
     vector<double> _node_pop; // Used for the population of the nodes.
     vector< std::array<double, 3> > _votes;
+    vector< vector<size_t> > _neighbors;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);
     vector<size_t> _cached_neighs_from; size_t _current_node_cache_neigh_from;
