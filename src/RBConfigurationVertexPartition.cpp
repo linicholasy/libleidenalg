@@ -225,7 +225,7 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
         double T = R + D;
         if (R > D)      { wR = R - 0.5*T; wD = D; } // If Reps win
         else if (D > R) { wD = D - 0.5*T; wR = R; } // if dems win
-        else            { wR = R - 0.5*T; wD = D - 0.5*T; } // if tied
+        else            { wR = R - 0.5*T; wD = D - 0.5*T; } // if tied (unlikely)
       };
 
       auto const& votes_v = this->graph->votes(v); // the votes list of length 3. This should be specified in the function call
