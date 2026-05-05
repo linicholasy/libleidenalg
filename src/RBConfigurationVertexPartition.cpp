@@ -223,18 +223,18 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
     {
       auto wasted = [](double R, double D, double& wR, double& wD) {
         double T = R + D;
-        if (R > D)      { wR = R - 0.5*T; wD = D; } // If Reps won
-        else if (D > R) { wD = D - 0.5*T; wR = R; } // if dems won
+        if (R > D)      { wR = R - 0.5*T; wD = D; } // If Reps win
+        else if (D > R) { wD = D - 0.5*T; wR = R; } // if dems win
         else            { wR = R - 0.5*T; wD = D - 0.5*T; } // if tied
       };
 
-      auto const& votes_v = this->graph->votes(v); // the votes list of length 3. This should be specfied in the function call
-      double r = votes_v[0], d = votes_v[1];
-      auto const& cv_old = this->cvotes(old_comm);
-      auto const& cv_new = this->cvotes(new_comm);
+      auto const& votes_v = this->graph->votes(v); // the votes list of length 3. This should be specified in the function call
+      double r = votes_v[0], d = votes_v[1]; // first element rep. vote counts; second is dem. counts; third "other"
+      auto const& cv_old = this->cvotes(old_comm); // aggregate vote counts
+      auto const& cv_new = this->cvotes(new_comm); // aggregate vote counts
 
-      double W_R = 0.0, W_D = 0.0, V = 0.0;
-      for (size_t c = 0; c < this->n_communities(); c++)
+      double W_R = 0.0, W_D = 0.0, V = 0.0;  
+      for (size_t c = 0; c < this->n_communities(); c++) // for loop to calculate wasted votes
       {
         auto const& cv = this->cvotes(c);
         double wR_c, wD_c;
