@@ -9,6 +9,7 @@
 #include <set>
 #include <exception>
 #include <deque>
+#include <array>
 
 #include <cstdbool>
 
@@ -155,6 +156,19 @@ class LIBLEIDENALG_EXPORT Graph
     inline void set_node_pop(vector<double> const& pop)
     { this->_node_pop = pop; };
 
+    inline std::array<double, 3> const& votes(size_t v)
+    { return this->_votes[v]; };
+
+    inline bool has_votes() const
+    { return !this->_votes.empty(); };
+
+    inline void set_votes(vector< std::array<double, 3> > const& v)
+    {
+      if (v.size() != static_cast<size_t>(igraph_vcount(this->_graph)))
+        throw Exception("Votes vector not the same size as the number of nodes.");
+      this->_votes = v;
+    };
+
     inline double node_self_weight(size_t v)
     { return this->_node_self_weights[v]; };
 
@@ -210,6 +224,7 @@ class LIBLEIDENALG_EXPORT Graph
     vector<double> _node_sizes; // Used for the size of the nodes.
     vector<double> _node_self_weights; // Used for the self weight of the nodes.
     vector<double> _node_pop; // Used for the population of the nodes.
+    vector< std::array<double, 3> > _votes;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);
     vector<size_t> _cached_neighs_from; size_t _current_node_cache_neigh_from;
