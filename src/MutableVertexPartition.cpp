@@ -206,6 +206,22 @@ void MutableVertexPartition::init_admin()
     }
   }
 
+  this->_W_R = 0.0;
+  this->_W_D = 0.0;
+  this->_V = 0.0;
+  if (this->graph->has_votes())
+  {
+    for (size_t c = 0; c < this->_n_communities; c++)
+    {
+      double R = this->_crep[c], D = this->_cdem[c];
+      double wR, wD;
+      wasted_votes(R, D, wR, wD);
+      this->_W_R += wR;
+      this->_W_D += wD;
+      this->_V += R + D;
+    }
+  }
+
   size_t m = graph->ecount();
   for (size_t e = 0; e < m; e++)
   {
@@ -640,9 +656,14 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
   this->_cpop[old_comm] -= this->graph->node_pop(v);
   if (this->graph->has_votes() && old_comm < this->_cdem.size())
   {
+    double wR_b, wD_b, wR_a, wD_a;
+    wasted_votes(this->_crep[old_comm], this->_cdem[old_comm], wR_b, wD_b);
     this->_cdem[old_comm]   -= this->graph->dem_votes(v);
     this->_crep[old_comm]   -= this->graph->rep_votes(v);
     this->_cother[old_comm] -= this->graph->other_votes(v);
+    wasted_votes(this->_crep[old_comm], this->_cdem[old_comm], wR_a, wD_a);
+    this->_W_R += (wR_a - wR_b);
+    this->_W_D += (wD_a - wD_b);
   }
   #ifdef DEBUG
     cerr << "Removed from old community." << endl;
@@ -693,9 +714,14 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
   this->_cpop[new_comm] += this->graph->node_pop(v);
   if (this->graph->has_votes() && new_comm < this->_cdem.size())
   {
+    double wR_b, wD_b, wR_a, wD_a;
+    wasted_votes(this->_crep[new_comm], this->_cdem[new_comm], wR_b, wD_b);
     this->_cdem[new_comm]   += this->graph->dem_votes(v);
     this->_crep[new_comm]   += this->graph->rep_votes(v);
     this->_cother[new_comm] += this->graph->other_votes(v);
+    wasted_votes(this->_crep[new_comm], this->_cdem[new_comm], wR_a, wD_a);
+    this->_W_R += (wR_a - wR_b);
+    this->_W_D += (wD_a - wD_b);
   }
 
   // Switch outgoing links

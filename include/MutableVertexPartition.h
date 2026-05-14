@@ -62,6 +62,18 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     double cdem(size_t comm);
     double crep(size_t comm);
     double cother(size_t comm);
+
+    inline double W_R() const { return this->_W_R; }
+    inline double W_D() const { return this->_W_D; }
+    inline double V_votes() const { return this->_V; }
+
+    static inline void wasted_votes(double R, double D, double& wR, double& wD)
+    {
+      double T = R + D;
+      if (R > D)      { wR = R - 0.5*T; wD = D; }
+      else if (D > R) { wD = D - 0.5*T; wR = R; }
+      else            { wR = R - 0.5*T; wD = D - 0.5*T; }
+    }
     vector<size_t> get_community(size_t comm);
     vector< vector<size_t> > get_communities();
     size_t n_communities();
@@ -158,6 +170,10 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     vector<double> _cdem;
     vector<double> _crep;
     vector<double> _cother;
+
+    double _W_R;
+    double _W_D;
+    double _V;
 
     double weight_vertex_tofrom_comm(size_t v, size_t comm, igraph_neimode_t mode);
 
