@@ -827,10 +827,18 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
   G->_node_pop = cpops;
   if (this->has_votes())
   {
-    vector< std::array<double, 3> > collapsed_votes(n_collapsed, std::array<double, 3>{0.0, 0.0, 0.0});
+    vector<double> collapsed_dem(n_collapsed, 0.0);
+    vector<double> collapsed_rep(n_collapsed, 0.0);
+    vector<double> collapsed_other(n_collapsed, 0.0);
     for (size_t c = 0; c < partition->n_communities(); c++)
-      collapsed_votes[c] = partition->cvotes(c);
-    G->_votes = collapsed_votes;
+    {
+      collapsed_dem[c]   = partition->cdem(c);
+      collapsed_rep[c]   = partition->crep(c);
+      collapsed_other[c] = partition->cother(c);
+    }
+    G->_dem_votes   = collapsed_dem;
+    G->_rep_votes   = collapsed_rep;
+    G->_other_votes = collapsed_other;
   }
   G->_remove_graph = true;
   #ifdef DEBUG

@@ -156,17 +156,30 @@ class LIBLEIDENALG_EXPORT Graph
     inline void set_node_pop(vector<double> const& pop)
     { this->_node_pop = pop; };
 
-    inline std::array<double, 3> const& votes(size_t v)
-    { return this->_votes[v]; };
+    inline double dem_votes(size_t v)
+    { return this->_dem_votes[v]; };
+
+    inline double rep_votes(size_t v)
+    { return this->_rep_votes[v]; };
+
+    inline double other_votes(size_t v)
+    { return v < this->_other_votes.size() ? this->_other_votes[v] : 0.0; };
 
     inline bool has_votes() const
-    { return !this->_votes.empty(); };
+    { return !this->_dem_votes.empty() && !this->_rep_votes.empty(); };
 
-    inline void set_votes(vector< std::array<double, 3> > const& v)
+    inline void set_votes(vector<double> const& dem,
+                          vector<double> const& rep,
+                          vector<double> const& other)
     {
-      if (v.size() != static_cast<size_t>(igraph_vcount(this->_graph)))
-        throw Exception("Votes vector not the same size as the number of nodes.");
-      this->_votes = v;
+      size_t n = static_cast<size_t>(igraph_vcount(this->_graph));
+      if (dem.size() != n || rep.size() != n)
+        throw Exception("dem_votes/rep_votes vectors must have length vcount().");
+      if (!other.empty() && other.size() != n)
+        throw Exception("other_votes vector must have length vcount() or be empty.");
+      this->_dem_votes = dem;
+      this->_rep_votes = rep;
+      this->_other_votes = other;
     };
 
     inline vector<size_t> const& neighbors(size_t v)
@@ -237,7 +250,9 @@ class LIBLEIDENALG_EXPORT Graph
     vector<double> _node_sizes; // Used for the size of the nodes.
     vector<double> _node_self_weights; // Used for the self weight of the nodes.
     vector<double> _node_pop; // Used for the population of the nodes.
-    vector< std::array<double, 3> > _votes;
+    vector<double> _dem_votes;
+    vector<double> _rep_votes;
+    vector<double> _other_votes;
     vector< vector<size_t> > _neighbors;
 
     void cache_neighbours(size_t v, igraph_neimode_t mode);

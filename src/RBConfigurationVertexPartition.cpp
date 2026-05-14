@@ -228,28 +228,28 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
         else            { wR = R - 0.5*T; wD = D - 0.5*T; } // if tied (unlikely)
       };
 
-      auto const& votes_v = this->graph->votes(v); // the votes list of length 3. This should be specified in the function call
-      double r = votes_v[0], d = votes_v[1]; // first element rep. vote counts; second is dem. counts; third "other"
-      auto const& cv_old = this->cvotes(old_comm); // aggregate vote counts
-      auto const& cv_new = this->cvotes(new_comm); // aggregate vote counts
+      double r = this->graph->rep_votes(v);
+      double d = this->graph->dem_votes(v);
+      double cR_old = this->crep(old_comm), cD_old = this->cdem(old_comm);
+      double cR_new = this->crep(new_comm), cD_new = this->cdem(new_comm);
 
       double W_R = 0.0, W_D = 0.0, V = 0.0;  
       for (size_t c = 0; c < this->n_communities(); c++) // for loop to calculate wasted votes
       {
-        auto const& cv = this->cvotes(c);
+        double cR = this->crep(c), cD = this->cdem(c);
         double wR_c, wD_c;
-        wasted(cv[0], cv[1], wR_c, wD_c);
+        wasted(cR, cD, wR_c, wD_c);
         W_R += wR_c; W_D += wD_c;
-        V += cv[0] + cv[1];
+        V += cR + cD;
       }
 
       double wR_old_b, wD_old_b, wR_new_b, wD_new_b;
-      wasted(cv_old[0], cv_old[1], wR_old_b, wD_old_b);
-      wasted(cv_new[0], cv_new[1], wR_new_b, wD_new_b);
+      wasted(cR_old, cD_old, wR_old_b, wD_old_b);
+      wasted(cR_new, cD_new, wR_new_b, wD_new_b);
 
       double wR_old_a, wD_old_a, wR_new_a, wD_new_a;
-      wasted(cv_old[0] - r, cv_old[1] - d, wR_old_a, wD_old_a);
-      wasted(cv_new[0] + r, cv_new[1] + d, wR_new_a, wD_new_a);
+      wasted(cR_old - r, cD_old - d, wR_old_a, wD_old_a);
+      wasted(cR_new + r, cD_new + d, wR_new_a, wD_new_a);
 
       double dWR = (wR_old_a + wR_new_a) - (wR_old_b + wR_new_b);
       double dWD = (wD_old_a + wD_new_a) - (wD_old_b + wD_new_b);
@@ -339,11 +339,11 @@ double RBConfigurationVertexPartition::quality(double resolution_parameter)
     double W_R = 0.0, W_D = 0.0, V = 0.0;
     for (size_t c = 0; c < this->n_communities(); c++)
     {
-      auto const& cv = this->cvotes(c);
+      double cR = this->crep(c), cD = this->cdem(c);
       double wR_c, wD_c;
-      wasted(cv[0], cv[1], wR_c, wD_c);
+      wasted(cR, cD, wR_c, wD_c);
       W_R += wR_c; W_D += wD_c;
-      V += cv[0] + cv[1];
+      V += cR + cD;
     }
 
     if (V > 0.0)
