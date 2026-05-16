@@ -18,12 +18,14 @@ class LIBLEIDENALG_EXPORT RBConfigurationVertexPartition : public LinearResoluti
           vector<size_t> const& membership, double resolution_parameter,
           double pop_lambda, double pop_lambda2, double pop_threshold,
           int target_communities, double community_count_lambda,
-          double eg_lambda, double eg_lambda2, double eg_target);
+          double eg_lambda, double eg_lambda2, double eg_target,
+          double cont_lambda, double cont_lambda2);
     RBConfigurationVertexPartition(Graph* graph,
           double resolution_parameter,
           double pop_lambda, double pop_lambda2, double pop_threshold,
           int target_communities, double community_count_lambda,
-          double eg_lambda, double eg_lambda2, double eg_target);
+          double eg_lambda, double eg_lambda2, double eg_target,
+          double cont_lambda, double cont_lambda2);
 
     virtual ~RBConfigurationVertexPartition();
     virtual RBConfigurationVertexPartition* create(Graph* graph);
@@ -40,6 +42,8 @@ class LIBLEIDENALG_EXPORT RBConfigurationVertexPartition : public LinearResoluti
     double eg_lambda;
     double eg_lambda2;
     double eg_target;
+    double cont_lambda;
+    double cont_lambda2;
 
   protected:
   private:

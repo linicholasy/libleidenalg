@@ -66,6 +66,7 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     inline double W_R() const { return this->_W_R; }
     inline double W_D() const { return this->_W_D; }
     inline double V_votes() const { return this->_V; }
+    inline double cut() const { return this->_cut; }
 
     static inline void wasted_votes(double R, double D, double& wR, double& wD)
     {
@@ -174,6 +175,7 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     double _W_R;
     double _W_D;
     double _V;
+    double _cut;
 
     double weight_vertex_tofrom_comm(size_t v, size_t comm, igraph_neimode_t mode);
 

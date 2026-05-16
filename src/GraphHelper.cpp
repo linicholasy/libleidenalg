@@ -840,6 +840,21 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
     G->_rep_votes   = collapsed_rep;
     G->_other_votes = collapsed_other;
   }
+  if (this->has_neighbors())
+  {
+    vector< vector<size_t> > collapsed_neighbors(n_collapsed);
+    for (size_t v = 0; v < this->vcount(); v++)
+    {
+      size_t c_v = partition->membership(v);
+      for (size_t u : this->neighbors(v))
+      {
+        size_t c_u = partition->membership(u);
+        if (c_v != c_u)
+          collapsed_neighbors[c_v].push_back(c_u);
+      }
+    }
+    G->_neighbors = collapsed_neighbors;
+  }
   G->_remove_graph = true;
   #ifdef DEBUG
     cerr << "exit Graph::collapse_graph(vector<size_t> membership)" << endl << endl;

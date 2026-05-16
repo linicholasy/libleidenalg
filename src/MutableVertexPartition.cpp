@@ -222,6 +222,18 @@ void MutableVertexPartition::init_admin()
     }
   }
 
+  this->_cut = 0.0;
+  if (this->graph->has_neighbors())
+  {
+    for (size_t v = 0; v < n; v++)
+    {
+      size_t mv = this->_membership[v];
+      for (size_t u : this->graph->neighbors(v))
+        if (this->_membership[u] != mv)
+          this->_cut += 1.0;
+    }
+  }
+
   size_t m = graph->ecount();
   for (size_t e = 0; e < m; e++)
   {
@@ -722,6 +734,16 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
     wasted_votes(this->_crep[new_comm], this->_cdem[new_comm], wR_a, wD_a);
     this->_W_R += (wR_a - wR_b);
     this->_W_D += (wD_a - wD_b);
+  }
+
+  if (this->graph->has_neighbors() && new_comm != old_comm)
+  {
+    for (size_t u : this->graph->neighbors(v))
+    {
+      size_t mu = this->_membership[u];
+      if (mu == old_comm) this->_cut += 2.0;
+      if (mu == new_comm) this->_cut -= 2.0;
+    }
   }
 
   // Switch outgoing links

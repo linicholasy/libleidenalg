@@ -6,7 +6,8 @@ RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
         membership, resolution_parameter),
         pop_lambda(0.0), pop_lambda2(0.0), pop_threshold(0.0),
         target_communities(0), community_count_lambda(0.0),
-        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0)
+        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0),
+        cont_lambda(0.0), cont_lambda2(0.0)
 { }
 
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
@@ -15,7 +16,8 @@ RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
         membership),
         pop_lambda(0.0), pop_lambda2(0.0), pop_threshold(0.0),
         target_communities(0), community_count_lambda(0.0),
-        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0)
+        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0),
+        cont_lambda(0.0), cont_lambda2(0.0)
 { }
 
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
@@ -23,37 +25,43 @@ RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
         LinearResolutionParameterVertexPartition(graph, resolution_parameter),
         pop_lambda(0.0), pop_lambda2(0.0), pop_threshold(0.0),
         target_communities(0), community_count_lambda(0.0),
-        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0)
+        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0),
+        cont_lambda(0.0), cont_lambda2(0.0)
 { }
 
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph) :
         LinearResolutionParameterVertexPartition(graph),
         pop_lambda(0.0), pop_lambda2(0.0), pop_threshold(0.0),
         target_communities(0), community_count_lambda(0.0),
-        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0)
+        eg_lambda(0.0), eg_lambda2(0.0), eg_target(0.0),
+        cont_lambda(0.0), cont_lambda2(0.0)
 { }
 
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
       vector<size_t> const& membership, double resolution_parameter,
       double pop_lambda, double pop_lambda2, double pop_threshold,
       int target_communities, double community_count_lambda,
-      double eg_lambda, double eg_lambda2, double eg_target) :
+      double eg_lambda, double eg_lambda2, double eg_target,
+      double cont_lambda, double cont_lambda2) :
         LinearResolutionParameterVertexPartition(graph,
         membership, resolution_parameter),
         pop_lambda(pop_lambda), pop_lambda2(pop_lambda2), pop_threshold(pop_threshold),
         target_communities(target_communities), community_count_lambda(community_count_lambda),
-        eg_lambda(eg_lambda), eg_lambda2(eg_lambda2), eg_target(eg_target)
+        eg_lambda(eg_lambda), eg_lambda2(eg_lambda2), eg_target(eg_target),
+        cont_lambda(cont_lambda), cont_lambda2(cont_lambda2)
 { }
 
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
       double resolution_parameter,
       double pop_lambda, double pop_lambda2, double pop_threshold,
       int target_communities, double community_count_lambda,
-      double eg_lambda, double eg_lambda2, double eg_target) :
+      double eg_lambda, double eg_lambda2, double eg_target,
+      double cont_lambda, double cont_lambda2) :
         LinearResolutionParameterVertexPartition(graph, resolution_parameter),
         pop_lambda(pop_lambda), pop_lambda2(pop_lambda2), pop_threshold(pop_threshold),
         target_communities(target_communities), community_count_lambda(community_count_lambda),
-        eg_lambda(eg_lambda), eg_lambda2(eg_lambda2), eg_target(eg_target)
+        eg_lambda(eg_lambda), eg_lambda2(eg_lambda2), eg_target(eg_target),
+        cont_lambda(cont_lambda), cont_lambda2(cont_lambda2)
 { }
 
 RBConfigurationVertexPartition::~RBConfigurationVertexPartition()
@@ -64,7 +72,8 @@ RBConfigurationVertexPartition* RBConfigurationVertexPartition::create(Graph* gr
   return new RBConfigurationVertexPartition(graph, this->resolution_parameter,
                                             this->pop_lambda, this->pop_lambda2, this->pop_threshold,
                                             this->target_communities, this->community_count_lambda,
-                                            this->eg_lambda, this->eg_lambda2, this->eg_target);
+                                            this->eg_lambda, this->eg_lambda2, this->eg_target,
+                                            this->cont_lambda, this->cont_lambda2);
 }
 
 RBConfigurationVertexPartition* RBConfigurationVertexPartition::create(Graph* graph, vector<size_t> const& membership)
@@ -72,7 +81,8 @@ RBConfigurationVertexPartition* RBConfigurationVertexPartition::create(Graph* gr
   return new RBConfigurationVertexPartition(graph, membership, this->resolution_parameter,
                                             this->pop_lambda, this->pop_lambda2, this->pop_threshold,
                                             this->target_communities, this->community_count_lambda,
-                                            this->eg_lambda, this->eg_lambda2, this->eg_target);
+                                            this->eg_lambda, this->eg_lambda2, this->eg_target,
+                                            this->cont_lambda, this->cont_lambda2);
 }
 
 /*****************************************************************************
@@ -252,6 +262,22 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
         diff -= (penalty_after - penalty_before);
       }
     }
+
+    if ((this->cont_lambda > 0.0 || this->cont_lambda2 > 0.0) && this->graph->has_neighbors())
+    {
+      double cut_before = this->cut();
+      double dc = 0.0;
+      for (size_t u : this->graph->neighbors(v))
+      {
+        size_t mu = this->_membership[u];
+        if (mu == old_comm) dc += 2.0;
+        if (mu == new_comm) dc -= 2.0;
+      }
+      double cut_after = cut_before + dc;
+      double pb = this->cont_lambda * cut_before + this->cont_lambda2 * cut_before * cut_before;
+      double pa = this->cont_lambda * cut_after  + this->cont_lambda2 * cut_after  * cut_after;
+      diff -= (pa - pb);
+    }
   }
   #ifdef DEBUG
     cerr << "exit RBConfigurationVertexPartition::diff_move(" << v << ", " << new_comm << ")" << endl;
@@ -325,6 +351,12 @@ double RBConfigurationVertexPartition::quality(double resolution_parameter)
       double dev = EG - this->eg_target;
       mod -= this->eg_lambda * abs(dev) + this->eg_lambda2 * dev * dev;
     }
+  }
+
+  if ((this->cont_lambda > 0.0 || this->cont_lambda2 > 0.0) && this->graph->has_neighbors())
+  {
+    double c = this->cut();
+    mod -= this->cont_lambda * c + this->cont_lambda2 * c * c;
   }
 
   double q = (2.0 - this->graph->is_directed())*mod;
