@@ -66,7 +66,8 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     inline double W_R() const { return this->_W_R; }
     inline double W_D() const { return this->_W_D; }
     inline double V_votes() const { return this->_V; }
-    inline double cut() const { return this->_cut; }
+    inline double frag() const { return this->_frag; }
+    double frag_delta(size_t v, size_t new_comm);
 
     static inline void wasted_votes(double R, double D, double& wR, double& wD)
     {
@@ -175,7 +176,11 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     double _W_R;
     double _W_D;
     double _V;
-    double _cut;
+    double _frag;
+
+    vector<size_t> _frag_stamp;
+    size_t _frag_gen;
+    size_t count_seed_components(vector<size_t> const& seeds, size_t comm, size_t exclude);
 
     double weight_vertex_tofrom_comm(size_t v, size_t comm, igraph_neimode_t mode);
 

@@ -265,17 +265,10 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
 
     if ((this->cont_lambda > 0.0 || this->cont_lambda2 > 0.0) && this->graph->has_neighbors())
     {
-      double cut_before = this->cut();
-      double dc = 0.0;
-      for (size_t u : this->graph->neighbors(v))
-      {
-        size_t mu = this->_membership[u];
-        if (mu == old_comm) dc += 2.0;
-        if (mu == new_comm) dc -= 2.0;
-      }
-      double cut_after = cut_before + dc;
-      double pb = this->cont_lambda * cut_before + this->cont_lambda2 * cut_before * cut_before;
-      double pa = this->cont_lambda * cut_after  + this->cont_lambda2 * cut_after  * cut_after;
+      double frag_before = this->frag();
+      double frag_after  = frag_before + this->frag_delta(v, new_comm);
+      double pb = this->cont_lambda * frag_before + this->cont_lambda2 * frag_before * frag_before;
+      double pa = this->cont_lambda * frag_after  + this->cont_lambda2 * frag_after  * frag_after;
       diff -= (pa - pb);
     }
   }
@@ -355,8 +348,8 @@ double RBConfigurationVertexPartition::quality(double resolution_parameter)
 
   if ((this->cont_lambda > 0.0 || this->cont_lambda2 > 0.0) && this->graph->has_neighbors())
   {
-    double c = this->cut();
-    mod -= this->cont_lambda * c + this->cont_lambda2 * c * c;
+    double f = this->frag();
+    mod -= this->cont_lambda * f + this->cont_lambda2 * f * f;
   }
 
   double q = (2.0 - this->graph->is_directed())*mod;

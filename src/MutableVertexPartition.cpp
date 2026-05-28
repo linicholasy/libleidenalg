@@ -222,16 +222,39 @@ void MutableVertexPartition::init_admin()
     }
   }
 
-  this->_cut = 0.0;
+  this->_frag_stamp.assign(n, 0);
+  this->_frag_gen = 0;
+  this->_frag = 0.0;
   if (this->graph->has_neighbors())
   {
-    for (size_t v = 0; v < n; v++)
+    vector<char> visited(n, 0);
+    size_t C = 0;
+    vector<size_t> stack;
+    for (size_t s = 0; s < n; s++)
     {
-      size_t mv = this->_membership[v];
-      for (size_t u : this->graph->neighbors(v))
-        if (this->_membership[u] != mv)
-          this->_cut += 1.0;
+      if (visited[s])
+        continue;
+      C++;
+      size_t comm = this->_membership[s];
+      stack.clear();
+      stack.push_back(s);
+      visited[s] = 1;
+      while (!stack.empty())
+      {
+        size_t x = stack.back(); stack.pop_back();
+        for (size_t y : this->graph->neighbors(x))
+          if (!visited[y] && this->_membership[y] == comm)
+          {
+            visited[y] = 1;
+            stack.push_back(y);
+          }
+      }
     }
+    size_t K = 0;
+    for (size_t c = 0; c < this->_n_communities; c++)
+      if (this->_cnodes[c] > 0)
+        K++;
+    this->_frag = (double)C - (double)K;
   }
 
   size_t m = graph->ecount();
@@ -620,6 +643,76 @@ size_t MutableVertexPartition::add_empty_community()
     v        -- Node to move.
     new_comm -- To which community should it move.
 *****************************************************************************/
+size_t MutableVertexPartition::count_seed_components(vector<size_t> const& seeds, size_t comm, size_t exclude)
+{
+  if (seeds.empty())
+    return 0;
+  this->_frag_gen++;
+  size_t gen = this->_frag_gen;
+  size_t count = 0;
+  vector<size_t> stack;
+  for (size_t seed : seeds)
+  {
+    if (this->_frag_stamp[seed] == gen)
+      continue;
+    count++;
+    stack.clear();
+    stack.push_back(seed);
+    this->_frag_stamp[seed] = gen;
+    while (!stack.empty())
+    {
+      size_t x = stack.back(); stack.pop_back();
+      for (size_t y : this->graph->neighbors(x))
+      {
+        if (y == exclude)
+          continue;
+        if (this->_membership[y] != comm)
+          continue;
+        if (this->_frag_stamp[y] == gen)
+          continue;
+        this->_frag_stamp[y] = gen;
+        stack.push_back(y);
+      }
+    }
+  }
+  return count;
+}
+
+double MutableVertexPartition::frag_delta(size_t v, size_t new_comm)
+{
+  size_t old_comm = this->_membership[v];
+  if (old_comm == new_comm || !this->graph->has_neighbors())
+    return 0.0;
+
+  vector<size_t> N_old, N_new;
+  for (size_t u : this->graph->neighbors(v))
+  {
+    size_t mu = this->_membership[u];
+    if (mu == old_comm)
+      N_old.push_back(u);
+    else if (mu == new_comm)
+      N_new.push_back(u);
+  }
+
+  double frag_old_delta;
+  if (this->_cnodes[old_comm] <= 1)
+    frag_old_delta = 0.0;                                   // old_comm empties: C-1, K-1
+  else if (N_old.empty())
+    frag_old_delta = -1.0;                                  // v was an isolated island
+  else
+    frag_old_delta = (double)this->count_seed_components(N_old, old_comm, v) - 1.0;
+
+  double frag_new_delta;
+  if (this->_cnodes[new_comm] == 0)
+    frag_new_delta = 0.0;                                   // empty target: C+1, K+1
+  else if (N_new.empty())
+    frag_new_delta = 1.0;                                   // v becomes a new island
+  else
+    frag_new_delta = 1.0 - (double)this->count_seed_components(N_new, new_comm, v);
+
+  return frag_old_delta + frag_new_delta;
+}
+
 void MutableVertexPartition::move_node(size_t v,size_t new_comm)
 {
   #ifdef DEBUG
@@ -658,6 +751,10 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
       cerr << "Change in possible edges in all comms: " << delta_possible_edges_in_comms << endl;
     #endif
   }
+
+  // Update fragmentation cache while membership/cnodes are still pre-move.
+  if (this->graph->has_neighbors() && new_comm != old_comm)
+    this->_frag += this->frag_delta(v, new_comm);
 
   // Remove from old community
   #ifdef DEBUG
@@ -734,16 +831,6 @@ void MutableVertexPartition::move_node(size_t v,size_t new_comm)
     wasted_votes(this->_crep[new_comm], this->_cdem[new_comm], wR_a, wD_a);
     this->_W_R += (wR_a - wR_b);
     this->_W_D += (wD_a - wD_b);
-  }
-
-  if (this->graph->has_neighbors() && new_comm != old_comm)
-  {
-    for (size_t u : this->graph->neighbors(v))
-    {
-      size_t mu = this->_membership[u];
-      if (mu == old_comm) this->_cut += 2.0;
-      if (mu == new_comm) this->_cut -= 2.0;
-    }
   }
 
   // Switch outgoing links
