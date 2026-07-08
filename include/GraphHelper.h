@@ -153,8 +153,12 @@ class LIBLEIDENALG_EXPORT Graph
     inline double node_pop(size_t v)
     { return this->_node_pop[v]; };
 
+    // Total population over all nodes (cached; conserved under graph collapse).
+    inline double total_pop()
+    { return this->_total_pop; };
+
     inline void set_node_pop(vector<double> const& pop)
-    { this->_node_pop = pop; };
+    { this->_node_pop = pop; this->init_total_pop(); };
 
     inline double dem_votes(size_t v)
     { return this->_dem_votes[v]; };
@@ -250,6 +254,7 @@ class LIBLEIDENALG_EXPORT Graph
     vector<double> _node_sizes; // Used for the size of the nodes.
     vector<double> _node_self_weights; // Used for the self weight of the nodes.
     vector<double> _node_pop; // Used for the population of the nodes.
+    double _total_pop; // Cached sum of _node_pop (see total_pop()/init_total_pop()).
     vector<double> _dem_votes;
     vector<double> _rep_votes;
     vector<double> _other_votes;
@@ -278,6 +283,7 @@ class LIBLEIDENALG_EXPORT Graph
     void set_default_edge_weight();
     void set_default_node_size();
     void set_default_node_pop();
+    void init_total_pop();
     void set_self_weights();
 
 };

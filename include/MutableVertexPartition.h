@@ -80,6 +80,10 @@ class LIBLEIDENALG_EXPORT MutableVertexPartition
     vector< vector<size_t> > get_communities();
     size_t n_communities();
 
+    // num_comm
+    inline size_t n_nonempty_communities()
+    { return this->_n_communities - this->_empty_communities.size(); };
+
     void move_node(size_t v,size_t new_comm);
     virtual double diff_move(size_t v, size_t new_comm)
     {

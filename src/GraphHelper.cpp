@@ -387,6 +387,14 @@ void Graph::set_default_node_pop()
     this->_node_pop[v] = 0.0;  // default: population = 0 (penalty is no-op unless node_pop is set)
 }
 
+void Graph::init_total_pop()
+{
+  double total = 0.0;
+  for (size_t v = 0; v < this->_node_pop.size(); v++)
+    total += this->_node_pop[v];
+  this->_total_pop = total;
+}
+
 void Graph::set_self_weights()
 {
   size_t n = this->vcount();
@@ -498,6 +506,10 @@ void Graph::init_admin()
   this->_current_node_cache_neigh_from = n + 1;
   this->_current_node_cache_neigh_to = n + 1;
   this->_current_node_cache_neigh_all = n + 1;
+
+  // Cache total population (node_pop is populated before init_admin in every
+  // constructor path; refreshed again wherever _node_pop is reassigned).
+  this->init_total_pop();
 }
 
 void Graph::cache_neighbour_edges(size_t v, igraph_neimode_t mode)
@@ -825,6 +837,7 @@ Graph* Graph::collapse_graph(MutableVertexPartition* partition)
   // Use existing constructor that auto-computes self_weights, then assign pop
   Graph* G = new Graph(graph, collapsed_weights, csizes, this->_correct_self_loops);
   G->_node_pop = cpops;
+  G->init_total_pop();  // refresh cache after overwriting node_pop
   if (this->has_votes())
   {
     vector<double> collapsed_dem(n_collapsed, 0.0);
