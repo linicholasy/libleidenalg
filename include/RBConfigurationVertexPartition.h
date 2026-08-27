@@ -19,13 +19,15 @@ class LIBLEIDENALG_EXPORT RBConfigurationVertexPartition : public LinearResoluti
           double pop_lambda, double pop_lambda2, double pop_threshold,
           int target_communities, double community_count_lambda,
           double eg_lambda, double eg_lambda2, double eg_target,
-          double cont_lambda, double cont_lambda2);
+          double cont_lambda, double cont_lambda2,
+          int pop_relative, int community_count_floor_only);
     RBConfigurationVertexPartition(Graph* graph,
           double resolution_parameter,
           double pop_lambda, double pop_lambda2, double pop_threshold,
           int target_communities, double community_count_lambda,
           double eg_lambda, double eg_lambda2, double eg_target,
-          double cont_lambda, double cont_lambda2);
+          double cont_lambda, double cont_lambda2,
+          int pop_relative, int community_count_floor_only);
 
     virtual ~RBConfigurationVertexPartition();
     virtual RBConfigurationVertexPartition* create(Graph* graph);
@@ -44,6 +46,12 @@ class LIBLEIDENALG_EXPORT RBConfigurationVertexPartition : public LinearResoluti
     double eg_target;
     double cont_lambda;
     double cont_lambda2;
+    // When non-zero, the population penalty is on the relative deviation
+    // (p_c/target - 1) rather than the absolute deviation (p_c - target).
+    int pop_relative;
+    // When non-zero, the community-count penalty is one-way: it charges only
+    // for having fewer communities than target_communities, never more.
+    int community_count_floor_only;
 
   protected:
   private:
