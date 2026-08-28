@@ -34,6 +34,25 @@ namespace {
     return deficit > 0 ? deficit : -deficit;
   }
 
+  // Scale applied to the summed population penalty.
+  //
+  // relative == 2: divide by the community count, so the penalty is a mean
+  // rather than a sum.  Every vertex is assigned, so the mean community
+  // population is exactly the target and the result is the squared
+  // coefficient of variation of the community populations.
+  //
+  // That quantity is free of K, which the summed form is not.  Along a
+  // near-equal trajectory any single merge makes one community twice the
+  // target, a relative deviation of 1, and the summed form charges the same
+  // for it at K = 2000 as at K = 10.  A lambda that controls the spread at
+  // the end is then a wall against the first merge.  Dividing by K charges
+  // lambda/K instead, so the early barrier falls with the community count
+  // while the same relative error at the end still costs lambda/K_final.
+  inline double pop_penalty_scale(int relative, size_t K)
+  {
+    return (relative == 2 && K > 0) ? 1.0 / K : 1.0;
+  }
+
 }
 
 RBConfigurationVertexPartition::RBConfigurationVertexPartition(Graph* graph,
@@ -218,20 +237,32 @@ double RBConfigurationVertexPartition::diff_move(size_t v, size_t new_comm)
       double pop_new_after  = pop_new_before + node_pop;
 
       // pop/num_comm
+      //
+      // This is a local approximation: K, and therefore the target and the
+      // penalty scale, are read once and held fixed across the move, and only
+      // the two affected communities are re-evaluated.  A move that empties or
+      // creates a community changes K, which shifts the target for every other
+      // community too; that is not accounted for here.  Doing so would cost a
+      // pass over all K communities per candidate move.  The approximation
+      // predates the relative modes and applies to the whole adaptive-target
+      // branch; the final partition is still scored exactly by quality().
+      size_t K = this->n_nonempty_communities();
+
       double pop_target;
       if (this->pop_threshold > 0.0)
         pop_target = this->pop_threshold;
       else
-      {
-        size_t K = this->n_nonempty_communities();
         pop_target = K > 0 ? this->graph->total_pop() / K : 0.0;
-      }
+
+      // Read once, so it is identical on both sides of the move.
+      double pop_scale = pop_penalty_scale(this->pop_relative, K);
 
       auto calc_penalty = [&](double p) -> double {
         if (p == 0.0)
           return 0.0;
         double diff_pop = pop_deviation(p, pop_target, this->pop_relative);
-        return this->pop_lambda * abs(diff_pop) + this->pop_lambda2 * diff_pop * diff_pop;
+        return pop_scale * (this->pop_lambda * abs(diff_pop)
+                            + this->pop_lambda2 * diff_pop * diff_pop);
       };
 
       double penalty_before = calc_penalty(pop_old_before) + calc_penalty(pop_new_before);
@@ -376,16 +407,18 @@ double RBConfigurationVertexPartition::quality(double resolution_parameter)
       if (cpop_c == 0.0)
         continue;
       // pop/num_comm
+      size_t K = this->n_nonempty_communities();
+
       double pop_target;
       if (this->pop_threshold > 0.0)
         pop_target = this->pop_threshold;
       else
-      {
-        size_t K = this->n_nonempty_communities();
         pop_target = K > 0 ? this->graph->total_pop() / K : 0.0;
-      }
+
+      double pop_scale = pop_penalty_scale(this->pop_relative, K);
       double diff_pop = pop_deviation(cpop_c, pop_target, this->pop_relative);
-      mod -= this->pop_lambda * abs(diff_pop) + this->pop_lambda2 * diff_pop * diff_pop;
+      mod -= pop_scale * (this->pop_lambda * abs(diff_pop)
+                          + this->pop_lambda2 * diff_pop * diff_pop);
     }
   }
 

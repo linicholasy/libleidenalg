@@ -46,8 +46,13 @@ class LIBLEIDENALG_EXPORT RBConfigurationVertexPartition : public LinearResoluti
     double eg_target;
     double cont_lambda;
     double cont_lambda2;
-    // When non-zero, the population penalty is on the relative deviation
-    // (p_c/target - 1) rather than the absolute deviation (p_c - target).
+    // How the population penalty measures a community's deviation:
+    //   0  absolute, p_c - target
+    //   1  relative, p_c/target - 1, summed over communities
+    //   2  relative and divided by the community count, i.e. the mean rather
+    //      than the sum.  Equals the squared coefficient of variation of the
+    //      community populations, so unlike 1 it is free of the community
+    //      count and does not turn into a barrier against early merges.
     int pop_relative;
     // When non-zero, the community-count penalty is one-way: it charges only
     // for having fewer communities than target_communities, never more.
